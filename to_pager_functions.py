@@ -81,11 +81,7 @@ def separate_thread_answers(client,
     prompt_message_format = prompt_message + additional_formatting_requirements
     print(prompt_message_format)
     
-    thread = client.beta.threads.create(tool_resources={
-    "file_search": {
-      "vector_store_ids": ["vs_2"]
-    }
-  })
+    thread = client.beta.threads.create()
 
     """
     We essentially append our message to the current thread, to query the assistant
