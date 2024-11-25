@@ -100,7 +100,7 @@ for section_name, section_data in sections.items():
         try:
             # Include extracted text in the input
             input_message = (
-                f"{prompt_message}\n\nContext extracted from the uploaded PDF:\n\n{extracted_text}"
+                f"{prompt_message}"
             )
 
             # Query the assistant
