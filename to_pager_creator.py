@@ -103,7 +103,7 @@ for section_name, section_data in sections.items():
                 openai,
                 prompt_message=input_message,
                 additional_formatting_requirements=additional_formatting_requirements,
-                assistant_id=assistant_id,
+                assistant_identifier=assistant_id,
             )
 
             if assistant_response:
