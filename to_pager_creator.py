@@ -5,7 +5,7 @@ import openai
 import pandas as pd
 import to_pager_functions as fc
 # Function to chunk large text into manageable sizes
-def chunk_text(text, max_length=256000):
+def chunk_text(text, max_length=1000):
     """Split text into chunks that are within the API's max length."""
     return [text[i:i + max_length] for i in range(0, len(text), max_length)]
 
