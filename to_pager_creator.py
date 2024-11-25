@@ -1,3 +1,12 @@
+import streamlit as st
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
+from langchain.chat_models import ChatOpenAI
+from docx import Document
+
 # Streamlit App Title
 st.title("OpenAI Assistant: Document Generator with PDF Support")
 
