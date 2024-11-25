@@ -39,6 +39,11 @@ try:
     extracted_text = ""
     for page in reader.pages:
         extracted_text += page.extract_text()
+
+    # Display PDF content in the sidebar
+    st.sidebar.subheader("Extracted PDF Content")
+    st.sidebar.text_area("PDF Content Preview", extracted_text, height=300)
+
 except Exception as e:
     st.error(f"Error reading the PDF file: {e}")
     st.stop()
@@ -89,7 +94,9 @@ for section_name, section_data in sections.items():
 
         try:
             # Include extracted text in the input
-            input_message = f"{prompt_message}\n\nPDF Content:\n{extracted_text}"
+            input_message = (
+                f"{prompt_message}\n\nContext extracted from the uploaded PDF:\n\n{extracted_text}"
+            )
 
             # Query the assistant
             assistant_response = fc.separate_thread_answers(
