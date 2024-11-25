@@ -68,17 +68,13 @@ except Exception as e:
 results = {}
 
 for assistant_name, assistant_id in assistants.items():
-    st.write(f"Querying {assistant_name} Assistant...")
-    query = st.text_input(f"Enter your question for {assistant_name}:", key=assistant_id)
-
-    if st.button(f"Submit Query to {assistant_name}", key=f"submit_{assistant_id}"):
+    if st.button("Processing"):
         try:
             with st.spinner(f"Querying {assistant_name} Assistant..."):
                 # Query the assistant with the vector store
-                response = client.beta.assistants.query(
+                response = client.beta.assistants.update(
                     assistant_id=assistant_id,
-                    vector_store_id=vector_store.id,
-                    query=query,
+                    vector_store_id=vector_store.id
                 )
                 results[assistant_name] = response["answer"]
                 st.write(f"Response from {assistant_name} Assistant:")
