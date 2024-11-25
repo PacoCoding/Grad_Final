@@ -1,2 +1,2 @@
 # Grad_Final
-Chat che dopo aver fatto upload dati crea un file word con analisi
+Chat che permette di dati pdf e prompt precedentemente creati di creare analisi. UTILIZZA PDFREADER PER PDF
