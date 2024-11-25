@@ -101,7 +101,7 @@ for section_name, section_data in sections.items():
             # Query the assistant
             assistant_response = fc.separate_thread_answers(
                 openai,
-                input_message=input_message,
+                prompt_message=input_message,
                 additional_formatting_requirements=additional_formatting_requirements,
                 assistant_id=assistant_id,
             )
