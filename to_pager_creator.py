@@ -22,6 +22,7 @@ st.sidebar.write(
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Sidebar PDF Upload
+# Sidebar PDF Upload
 st.sidebar.header("Upload PDF")
 uploaded_pdf = st.sidebar.file_uploader("Upload a PDF File", type=["pdf"])
 pdf_uploaded = False
@@ -32,11 +33,11 @@ if uploaded_pdf:
     pdf_uploaded = True
 
     try:
-        # Upload the PDF to OpenAI for analysis by assistants
+        # Use OpenAI File API to upload the PDF
         st.sidebar.write("Uploading PDF to OpenAI...")
         response = openai.File.create(
-            file=openai.util.to_file_content(uploaded_pdf),
-            purpose="answers",
+            file=uploaded_pdf,
+            purpose="answers",  # The purpose must match your assistant's functionality
         )
         file_id = response["id"]
         st.sidebar.success(f"PDF uploaded successfully. File ID: {file_id}")
