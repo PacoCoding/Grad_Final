@@ -1,11 +1,3 @@
-import streamlit as st
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-import openai
-import pandas as pd
-import to_pager_functions as fc
-from docx import Document
-
 # Streamlit App Title
 st.title("OpenAI Assistant: Document Generator with PDF Support")
 
@@ -27,12 +19,14 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 st.sidebar.header("Upload PDF")
 uploaded_pdf = st.sidebar.file_uploader("Upload a PDF File", type=["pdf"])
 
-pdf_content = None
-if uploaded_pdf:
-    st.sidebar.success(f"Uploaded PDF: {uploaded_pdf.name}")
-    # Pass the PDF file to the assistant
-    pdf_content = uploaded_pdf.read()  # Read as binary
-    st.sidebar.write("PDF uploaded successfully!")
+if not uploaded_pdf:
+    st.warning("Please upload a PDF file to begin processing.")
+    st.stop()
+
+# If PDF is uploaded
+st.sidebar.success(f"Uploaded PDF: {uploaded_pdf.name}")
+pdf_content = uploaded_pdf.read()  # Read as binary
+st.sidebar.write("PDF uploaded successfully!")
 
 # Preloaded Files
 xlsx_file = "prompt_db.xlsx"
@@ -78,11 +72,8 @@ for section_name, section_data in sections.items():
         st.write(f"Processing prompt: {prompt_name}")
 
         try:
-            # Include PDF content if uploaded
-            if pdf_content:
-                input_message = f"{prompt_message}\n\nPDF Content (Binary): {pdf_content}"
-            else:
-                input_message = prompt_message
+            # Include PDF content in the input
+            input_message = f"{prompt_message}\n\nPDF Content (Binary): {pdf_content}"
 
             assistant_response = fc.separate_thread_answers(
                 openai, input_message, additional_formatting_requirements, assistant_id
