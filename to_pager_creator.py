@@ -25,29 +25,12 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 # If using Streamlit's uploaded file
 uploaded_file = st.sidebar.file_uploader("Upload a PDF File", type=["pdf"])
 
-if uploaded_file:
-    file_name = uploaded_file.name  # Extract the file name
-    file_bytes = uploaded_file.read()  # Read the file in bytes
-
-    # Ensure file_bytes is passed as a file-like object
-    try:
-        # Pass file-like content to OpenAI's `client.files.create`
-        message_file = client.files.create(
-            file=(file_name, file_bytes),  # Pass as a tuple (filename, file content)
-            purpose="assistants"
-        )
-        st.sidebar.success(f"File uploaded successfully with ID: {message_file.id}")
-    except Exception as e:
-        st.error(f"Error uploading file: {e}")
 if not uploaded_file:
     st.warning("Please upload a file to begin.")
     st.stop()
 
 # Confirm File Upload
 st.sidebar.success(f"Uploaded File: {uploaded_file.name}")
-
-# Read the file in binary format
-file_bytes = uploaded_file.read()
 
 # Define Pre-Created Assistants
 assistants = {
@@ -58,7 +41,7 @@ assistants = {
 # Upload the File to OpenAI
 try:
     client = openai.Client()  # Initialize OpenAI client
-    message_file = client.files.create(file=file_bytes, purpose="assistants")
+    message_file = client.files.create(file=uploaded_file, purpose="assistants")
     st.sidebar.write(f"File uploaded successfully with ID: {message_file.id}")
 except Exception as e:
     st.error(f"Error uploading the file: {e}")
