@@ -22,8 +22,23 @@ st.sidebar.write(
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Sidebar File Upload
+# If using Streamlit's uploaded file
 uploaded_file = st.sidebar.file_uploader("Upload a PDF File", type=["pdf"])
 
+if uploaded_file:
+    file_name = uploaded_file.name  # Extract the file name
+    file_bytes = uploaded_file.read()  # Read the file in bytes
+
+    # Ensure file_bytes is passed as a file-like object
+    try:
+        # Pass file-like content to OpenAI's `client.files.create`
+        message_file = client.files.create(
+            file=(file_name, file_bytes),  # Pass as a tuple (filename, file content)
+            purpose="assistants"
+        )
+        st.sidebar.success(f"File uploaded successfully with ID: {message_file.id}")
+    except Exception as e:
+        st.error(f"Error uploading file: {e}")
 if not uploaded_file:
     st.warning("Please upload a file to begin.")
     st.stop()
