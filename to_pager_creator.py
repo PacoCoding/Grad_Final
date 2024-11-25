@@ -2,18 +2,19 @@ import openai
 import streamlit as st
 from docx import Document
 import pandas as pd
+from PyPDF2 import PdfReader
 import to_pager_functions as fc
 
 # Streamlit App Title
-st.title("OpenAI Assistant: Document Generator with File Search Tool Support")
+st.title("OpenAI Assistant: Document Generator with PDF Support")
 
 # Sidebar Instructions
 st.sidebar.header("Instructions")
 st.sidebar.write(
     """
     This app uses the preloaded prompt database (`prompt_db.xlsx`) and Word template 
-    (`to_pager_template.docx`) to generate a document. You can upload a PDF, which will be
-    processed using the predefined assistants.
+    (`to_pager_template.docx`) to generate a document. You can upload a PDF file to extract
+    its content and analyze it using predefined assistants.
     Ensure your OpenAI API key is set in Streamlit Secrets.
     """
 )
@@ -22,15 +23,25 @@ st.sidebar.write(
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Sidebar File Upload
-st.sidebar.header("Upload File")
+st.sidebar.header("Upload PDF")
 uploaded_file = st.sidebar.file_uploader("Upload a PDF File", type=["pdf"])
 
 if not uploaded_file:
     st.warning("Please upload a file to begin processing.")
     st.stop()
 
-# If a file is uploaded, provide feedback
+# If a file is uploaded, extract text
 st.sidebar.success(f"Uploaded File: {uploaded_file.name}")
+
+try:
+    # Extract text from the PDF
+    reader = PdfReader(uploaded_file)
+    extracted_text = ""
+    for page in reader.pages:
+        extracted_text += page.extract_text()
+except Exception as e:
+    st.error(f"Error reading the PDF file: {e}")
+    st.stop()
 
 # Preloaded Files
 xlsx_file = "prompt_db.xlsx"
@@ -41,14 +52,6 @@ try:
     doc_copy = Document(docx_file)
 except Exception as e:
     st.error(f"Error loading preloaded files: {e}")
-    st.stop()
-
-# Upload the file to OpenAI's file storage
-try:
-    file_search_tool_id = openai.File.create(file=uploaded_file, purpose="answers").id
-    st.sidebar.success("File uploaded successfully to OpenAI's File Search Tool.")
-except Exception as e:
-    st.error(f"Error uploading file to OpenAI: {e}")
     st.stop()
 
 # Define the sections and assistants
@@ -85,13 +88,15 @@ for section_name, section_data in sections.items():
         st.write(f"Processing prompt: {prompt_name}")
 
         try:
-            # Pass the file as input for the assistant
+            # Include extracted text in the input
+            input_message = f"{prompt_message}\n\nPDF Content:\n{extracted_text}"
+
+            # Query the assistant
             assistant_response = fc.separate_thread_answers(
                 openai,
-                input_message=prompt_message,
+                input_message=input_message,
                 additional_formatting_requirements=additional_formatting_requirements,
                 assistant_id=assistant_id,
-                file_id=file_search_tool_id,  # Pass the uploaded file ID here
             )
 
             if assistant_response:
