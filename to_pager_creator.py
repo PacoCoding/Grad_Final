@@ -2,20 +2,18 @@ import openai
 import streamlit as st
 from docx import Document
 import pandas as pd
-from PyPDF2 import PdfReader
 import to_pager_functions as fc
 
 # Streamlit App Title
-st.title("OpenAI Assistant: Document Generator with PDF Support")
+st.title("Custom Assistant: PDF Document Analyzer")
 
 # Sidebar Instructions
 st.sidebar.header("Instructions")
 st.sidebar.write(
     """
-    This app uses the preloaded prompt database (`prompt_db.xlsx`) and Word template 
-    (`to_pager_template.docx`) to generate a document. You can upload a PDF file to extract
-    its content and analyze it using predefined assistants.
-    Ensure your OpenAI API key is set in Streamlit Secrets.
+    Upload a PDF file to be analyzed by the custom assistants. The assistants will process
+    the content of the PDF and provide responses based on predefined prompts. Ensure your 
+    OpenAI API key is set in Streamlit Secrets.
     """
 )
 
@@ -30,25 +28,10 @@ if not uploaded_file:
     st.warning("Please upload a file to begin processing.")
     st.stop()
 
-# If a file is uploaded, extract text
+# Provide Feedback About the Uploaded File
 st.sidebar.success(f"Uploaded File: {uploaded_file.name}")
 
-try:
-    # Extract text from the PDF
-    reader = PdfReader(uploaded_file)
-    extracted_text = ""
-    for page in reader.pages:
-        extracted_text += page.extract_text()
-
-    # Display PDF content in the sidebar
-    st.sidebar.subheader("Extracted PDF Content")
-    st.sidebar.text_area("PDF Content Preview", extracted_text, height=300)
-
-except Exception as e:
-    st.error(f"Error reading the PDF file: {e}")
-    st.stop()
-
-# Preloaded Files
+# Preloaded Files for Prompts and Document Template
 xlsx_file = "prompt_db.xlsx"
 docx_file = "to_pager_template.docx"
 
@@ -59,7 +42,7 @@ except Exception as e:
     st.error(f"Error loading preloaded files: {e}")
     st.stop()
 
-# Define the sections and assistants
+# Define the sections and their respective assistants
 sections = {
     "A. BUSINESS OPPORTUNITY AND GROUP OVERVIEW": {
         "sheet_names": ["BO_Prompts", "BO_Format_add"],
@@ -82,6 +65,7 @@ for section_name, section_data in sections.items():
     assistant_id = section_data["assistant_id"]
 
     try:
+        # Retrieve prompts and formatting requirements
         prompt_list, additional_formatting_requirements = fc.prompts_retriever(
             xlsx_file, sheet_names
         )
@@ -93,34 +77,43 @@ for section_name, section_data in sections.items():
         st.write(f"Processing prompt: {prompt_name}")
 
         try:
-            # Include extracted text in the input
-            input_message = (
-                f"{prompt_message}\n\nContext extracted from the uploaded PDF:\n\n{extracted_text}"
+            # Send the uploaded PDF directly to the assistant for analysis
+            assistant_response = openai.ChatCompletion.create(
+                model="gpt-4",  # Use your specific assistant model or API
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an assistant that analyzes PDF documents.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Analyze the PDF document for the following prompt: {prompt_message}",
+                        "attachments": [{"file": uploaded_file}],
+                    },
+                ],
             )
 
-            # Query the assistant
-            assistant_response = fc.separate_thread_answers(
-                openai,
-                prompt_message=input_message,
-                additional_formatting_requirements=additional_formatting_requirements,
-                assistant_identifier=assistant_id,
-            )
+            # Extract the response from the assistant
+            assistant_response_content = assistant_response["choices"][0]["message"]["content"]
 
-            if assistant_response:
-                temp_responses.append(assistant_response)
-                assistant_response = fc.remove_source_patterns(assistant_response)
-                answers_dict[prompt_name] = assistant_response
+            if assistant_response_content:
+                temp_responses.append(assistant_response_content)
+                # Clean the response using `remove_source_patterns`
+                assistant_response_cleaned = fc.remove_source_patterns(assistant_response_content)
+                answers_dict[prompt_name] = assistant_response_cleaned
 
-                fc.document_filler(doc_copy, prompt_name, assistant_response)
+                # Fill the document with the assistant's response
+                fc.document_filler(doc_copy, prompt_name, assistant_response_cleaned)
 
         except Exception as e:
             st.error(f"Error generating response for {prompt_name}: {e}")
             continue
 
-# Save and Provide Download Link
+# Save the Generated Document
 new_file_path = "to_pager_official.docx"
 doc_copy.save(new_file_path)
 
+# Provide Download Link
 st.success(f"Document successfully generated!")
 with open(new_file_path, "rb") as file:
     st.download_button(
