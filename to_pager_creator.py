@@ -1,24 +1,19 @@
+import openai
 import streamlit as st
 from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-import openai
 import pandas as pd
 import to_pager_functions as fc
-# Function to chunk large text into manageable sizes
-def chunk_text(text, max_length=1000):
-    """Split text into chunks that are within the API's max length."""
-    return [text[i:i + max_length] for i in range(0, len(text), max_length)]
 
 # Streamlit App Title
-st.title("OpenAI Assistant: Document Generator with PDF Support")
+st.title("OpenAI Assistant: Document Generator with File Search Tool Support")
 
 # Sidebar Instructions
 st.sidebar.header("Instructions")
 st.sidebar.write(
     """
     This app uses the preloaded prompt database (`prompt_db.xlsx`) and Word template 
-    (`to_pager_template.docx`) to generate a document. Additionally, you can upload a PDF
-    to process its content via AI assistants.
+    (`to_pager_template.docx`) to generate a document. You can upload a PDF, which will be
+    processed using the predefined assistants.
     Ensure your OpenAI API key is set in Streamlit Secrets.
     """
 )
@@ -26,21 +21,16 @@ st.sidebar.write(
 # Access API Key from Streamlit Secrets
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# Sidebar PDF Upload
-st.sidebar.header("Upload PDF")
-uploaded_pdf = st.sidebar.file_uploader("Upload a PDF File", type=["pdf"])
+# Sidebar File Upload
+st.sidebar.header("Upload File")
+uploaded_file = st.sidebar.file_uploader("Upload a PDF File", type=["pdf"])
 
-if not uploaded_pdf:
-    st.warning("Please upload a PDF file to begin processing.")
+if not uploaded_file:
+    st.warning("Please upload a file to begin processing.")
     st.stop()
 
-# If PDF is uploaded
-st.sidebar.success(f"Uploaded PDF: {uploaded_pdf.name}")
-pdf_content = uploaded_pdf.read().decode("utf-8", errors="ignore")  # Read as binary and decode
-st.sidebar.write("PDF uploaded successfully!")
-
-# Split the PDF content into chunks
-chunks = chunk_text(pdf_content)
+# If a file is uploaded, provide feedback
+st.sidebar.success(f"Uploaded File: {uploaded_file.name}")
 
 # Preloaded Files
 xlsx_file = "prompt_db.xlsx"
@@ -53,11 +43,15 @@ except Exception as e:
     st.error(f"Error loading preloaded files: {e}")
     st.stop()
 
-# Process Sections
-st.subheader("Document Generation in Progress")
-temp_responses = []
-answers_dict = {}
+# Upload the file to OpenAI's file storage
+try:
+    file_search_tool_id = openai.File.create(file=uploaded_file, purpose="answers").id
+    st.sidebar.success("File uploaded successfully to OpenAI's File Search Tool.")
+except Exception as e:
+    st.error(f"Error uploading file to OpenAI: {e}")
+    st.stop()
 
+# Define the sections and assistants
 sections = {
     "A. BUSINESS OPPORTUNITY AND GROUP OVERVIEW": {
         "sheet_names": ["BO_Prompts", "BO_Format_add"],
@@ -68,6 +62,11 @@ sections = {
         "assistant_id": "asst_vy2MqKVgrmjCecSTRgg0y6oO",
     },
 }
+
+# Process Sections
+st.subheader("Document Generation in Progress")
+temp_responses = []
+answers_dict = {}
 
 for section_name, section_data in sections.items():
     st.write(f"Processing section: {section_name}")
@@ -86,26 +85,21 @@ for section_name, section_data in sections.items():
         st.write(f"Processing prompt: {prompt_name}")
 
         try:
-            responses = []
-            for i, chunk in enumerate(chunks):
-                input_message = f"{prompt_message}\n\nPDF Chunk {i+1}: {chunk}"
+            # Pass the file as input for the assistant
+            assistant_response = fc.separate_thread_answers(
+                openai,
+                input_message=prompt_message,
+                additional_formatting_requirements=additional_formatting_requirements,
+                assistant_id=assistant_id,
+                file_id=file_search_tool_id,  # Pass the uploaded file ID here
+            )
 
-                # Generate response for each chunk
-                assistant_response = fc.separate_thread_answers(
-                    openai, input_message, additional_formatting_requirements, assistant_id
-                )
+            if assistant_response:
+                temp_responses.append(assistant_response)
+                assistant_response = fc.remove_source_patterns(assistant_response)
+                answers_dict[prompt_name] = assistant_response
 
-                if assistant_response:
-                    assistant_response = fc.remove_source_patterns(assistant_response)
-                    responses.append(assistant_response)
-
-            # Combine responses from all chunks
-            combined_response = "\n\n".join(responses)
-            temp_responses.append(combined_response)
-            answers_dict[prompt_name] = combined_response
-
-            # Fill document with the combined response
-            fc.document_filler(doc_copy, prompt_name, combined_response)
+                fc.document_filler(doc_copy, prompt_name, assistant_response)
 
         except Exception as e:
             st.error(f"Error generating response for {prompt_name}: {e}")
