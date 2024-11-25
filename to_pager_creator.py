@@ -1,6 +1,10 @@
-import openai
 import streamlit as st
-
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+import openai
+import pandas as pd
+import to_pager_functions as fc
+from PyPDF2 import PdfReader
 # Streamlit App Title
 st.title("Custom Assistant with File Upload and Vector Store")
 
