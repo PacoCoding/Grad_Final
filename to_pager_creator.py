@@ -1,3 +1,8 @@
+# Function to chunk large text into manageable sizes
+def chunk_text(text, max_length=256000):
+    """Split text into chunks that are within the API's max length."""
+    return [text[i:i + max_length] for i in range(0, len(text), max_length)]
+
 # Streamlit App Title
 st.title("OpenAI Assistant: Document Generator with PDF Support")
 
@@ -25,8 +30,11 @@ if not uploaded_pdf:
 
 # If PDF is uploaded
 st.sidebar.success(f"Uploaded PDF: {uploaded_pdf.name}")
-pdf_content = uploaded_pdf.read()  # Read as binary
+pdf_content = uploaded_pdf.read().decode("utf-8", errors="ignore")  # Read as binary and decode
 st.sidebar.write("PDF uploaded successfully!")
+
+# Split the PDF content into chunks
+chunks = chunk_text(pdf_content)
 
 # Preloaded Files
 xlsx_file = "prompt_db.xlsx"
@@ -72,19 +80,26 @@ for section_name, section_data in sections.items():
         st.write(f"Processing prompt: {prompt_name}")
 
         try:
-            # Include PDF content in the input
-            input_message = f"{prompt_message}\n\nPDF Content (Binary): {pdf_content}"
+            responses = []
+            for i, chunk in enumerate(chunks):
+                input_message = f"{prompt_message}\n\nPDF Chunk {i+1}: {chunk}"
 
-            assistant_response = fc.separate_thread_answers(
-                openai, input_message, additional_formatting_requirements, assistant_id
-            )
+                # Generate response for each chunk
+                assistant_response = fc.separate_thread_answers(
+                    openai, input_message, additional_formatting_requirements, assistant_id
+                )
 
-            if assistant_response:
-                temp_responses.append(assistant_response)
-                assistant_response = fc.remove_source_patterns(assistant_response)
-                answers_dict[prompt_name] = assistant_response
+                if assistant_response:
+                    assistant_response = fc.remove_source_patterns(assistant_response)
+                    responses.append(assistant_response)
 
-                fc.document_filler(doc_copy, prompt_name, assistant_response)
+            # Combine responses from all chunks
+            combined_response = "\n\n".join(responses)
+            temp_responses.append(combined_response)
+            answers_dict[prompt_name] = combined_response
+
+            # Fill document with the combined response
+            fc.document_filler(doc_copy, prompt_name, combined_response)
 
         except Exception as e:
             st.error(f"Error generating response for {prompt_name}: {e}")
