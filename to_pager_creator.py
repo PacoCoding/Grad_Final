@@ -4,7 +4,6 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import openai
 import pandas as pd
 import to_pager_functions as fc
-from langchain.chat_models import ChatOpenAI
 from docx import Document
 
 # Streamlit App Title
