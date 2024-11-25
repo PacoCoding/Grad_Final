@@ -1,9 +1,9 @@
 import streamlit as st
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+import openai
+import pandas as pd
+import to_pager_functions as fc
 from langchain.chat_models import ChatOpenAI
 from docx import Document
 
