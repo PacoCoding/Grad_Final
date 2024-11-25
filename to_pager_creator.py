@@ -58,7 +58,7 @@ answers_dict = {}
 sections = {
     "A. BUSINESS OPPORTUNITY AND GROUP OVERVIEW": {
         "sheet_names": ["BO_Prompts", "BO_Format_add"],
-        "assistant_id": "asst_ZwYHPxoqquAdDHmVyZrr8SgC",
+        "assistant_id": "asst_SRPZaRBdVx0Wv89dHUGU7z7u",
     },
     "B. REFERENCE MARKET": {
         "sheet_names": ["RM_Prompts", "RM_Format_add"],
