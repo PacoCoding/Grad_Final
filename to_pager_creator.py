@@ -21,7 +21,14 @@ st.sidebar.write(
 
 # Access API Key from Streamlit Secrets
 openai.api_key = st.secrets["OPENAI_API_KEY"]
-
+client = OpenAI()
+ 
+assistant = client.beta.assistants.create(
+  name="Grad buddy",
+  instructions="You are an expert financial analyst. Use you knowledge base to answer questions about audited financial statements.",
+  model="gpt-3.5-turbo",
+  tools=[{"type": "file_search"}],
+)
 # Sidebar File Upload
 # If using Streamlit's uploaded file
 uploaded_file = st.sidebar.file_uploader("Upload a PDF File", type=["pdf"])
@@ -55,22 +62,32 @@ sections = {
     },
 }
 try:
-    client = openai.Client()  # Initialize OpenAI client
-    message_file = client.files.create(file=uploaded_file, purpose="assistants")
+     # Initialize OpenAI client
     st.sidebar.write(f"File uploaded successfully with ID: {message_file.id}")
 except Exception as e:
     st.error(f"Error uploading the file: {e}")
     st.stop()
 try:
     # Create a vector store or use an existing one
-    vector_store = client.beta.vector_stores.create(name="My Vector Store")
-    st.sidebar.write(f"Vector store created with ID: {vector_store.id}")
-
-    # Add the file to the vector store
     file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
-        vector_store_id=vector_store.id,
-        files=[uploaded_file]
-    )
+  vector_store_id=vector_store.id, files=uploaded_file
+)
+    assistant = client.beta.assistants.update(
+  assistant_id=assistant.id,
+  tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
+)
+thread = client.beta.threads.create(
+  messages=[
+    {
+      "role": "user",
+      "content": "How many shares of AAPL were outstanding at the end of of October 2023?",
+      # Attach the new file to the message.
+      "attachments": [
+        { "file_id": uploaded_file.id, "tools": [{"type": "file_search"}] }
+      ],
+    }
+  ]
+)    # Add the file to the vector stor
     st.sidebar.write(f"File indexed in vector store successfully: {file_batch.status}")
 
 except Exception as e:
