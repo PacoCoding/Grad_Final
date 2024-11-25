@@ -76,7 +76,8 @@ try:
   assistant_id=assistant.id,
   tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
 )
-thread = client.beta.threads.create(
+
+except thread = client.beta.threads.create(
   messages=[
     {
       "role": "user",
