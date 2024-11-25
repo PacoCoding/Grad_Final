@@ -56,7 +56,7 @@ try:
     # Add the file to the vector store
     file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
         vector_store_id=vector_store.id,
-        files=[message_file],
+        files=[uploaded_file],
     )
     st.sidebar.write(f"File indexed in vector store successfully: {file_batch.status}")
 
