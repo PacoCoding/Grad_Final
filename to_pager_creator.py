@@ -1,10 +1,9 @@
 import streamlit as st
-from PyPDF2 import PdfReader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+import openai
+import pandas as pd
+import to_pager_functions as fc
 # Function to chunk large text into manageable sizes
 def chunk_text(text, max_length=256000):
     """Split text into chunks that are within the API's max length."""
