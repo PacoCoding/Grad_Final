@@ -68,7 +68,7 @@ except Exception as e:
 results = {}
 
 for assistant_name, assistant_id in assistants.items():
-    if st.button("Processing"):
+    if st.button('Processing'):
         try:
             with st.spinner(f"Querying {assistant_name} Assistant..."):
                 # Query the assistant with the vector store
